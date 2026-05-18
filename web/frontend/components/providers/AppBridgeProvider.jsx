@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Provider } from "@shopify/app-bridge-react";
-import { Banner, Layout, Page } from "@shopify/polaris";
+import { Banner, Button, Layout, Page } from "@shopify/polaris";
 
 /**
  * A component to configure App Bridge.
@@ -64,19 +64,39 @@ export function AppBridgeProvider({ children }) {
           title: "Missing host query argument",
           children: (
             <>
-              Your app can only load if the URL has a <b>host</b> argument.
-              Please ensure that it is set, or access your app using the
-              Partners Dashboard <b>Test your app</b> feature
+              Your app was opened without the Shopify <b>host</b> parameter.
+              Reopen it from the store admin, or click below to restart the app
+              auth flow for this store.
             </>
           ),
         };
+
+    const shop = new URLSearchParams(location.search).get("shop");
+    const action = !process.env.SHOPIFY_API_KEY
+      ? null
+      : shop
+        ? {
+            content: "Restart app",
+            onAction: () => {
+              window.location.href = `/api/auth?shop=${encodeURIComponent(shop)}`;
+            },
+          }
+        : undefined;
 
     return (
       <Page narrowWidth>
         <Layout>
           <Layout.Section>
             <div style={{ marginTop: "100px" }}>
-              <Banner {...bannerProps} status="critical" />
+              <Banner {...bannerProps} status="critical">
+                {action ? (
+                  <div style={{ marginTop: "12px" }}>
+                    <Button primary onClick={action.onAction}>
+                      {action.content}
+                    </Button>
+                  </div>
+                ) : null}
+              </Banner>
             </div>
           </Layout.Section>
         </Layout>
