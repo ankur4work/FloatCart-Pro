@@ -334,6 +334,48 @@ app.get("/api/createSubscription", async (_req, res) => {
   }
 });
 
+app.get("/api/startSubscription", async (_req, res) => {
+  const session = res.locals.shopify.session;
+  const shop = session?.shop || null;
+
+  if (!session || !shop) {
+    return res.redirect(shop ? `/api/auth?shop=${encodeURIComponent(shop)}` : "/api/auth");
+  }
+
+  try {
+    const hasPayment = await shopify.api.billing.check({
+      session,
+      plans: [PREMIUM_PLAN],
+      isTest: IS_TEST,
+    });
+
+    if (hasPayment) {
+      return res.redirect(`/?shop=${encodeURIComponent(shop)}&billing=active`);
+    }
+
+    const confirmationUrl = await shopify.api.billing.request({
+      session,
+      plan: PREMIUM_PLAN,
+      isTest: IS_TEST,
+    });
+
+    if (!confirmationUrl) {
+      return res.redirect(`/pricing?billing_error=${encodeURIComponent("missing_confirmation_url")}`);
+    }
+
+    return res.redirect(String(confirmationUrl));
+  } catch (error) {
+    const message = error?.message || "Failed to create subscription";
+    const needsAuth = /auth|session|reauthor/i.test(message);
+
+    if (needsAuth) {
+      return res.redirect(`/api/auth?shop=${encodeURIComponent(shop)}`);
+    }
+
+    return res.redirect(`/pricing?billing_error=${encodeURIComponent(message)}`);
+  }
+});
+
 app.get("/api/cancelSubscription", async (_req, res) => {
   try {
     const session = res.locals.shopify.session;

@@ -154,51 +154,12 @@ export default function Pricing() {
         return;
       }
 
-      const response = await fetchAuth("/api/createSubscription");
-      const data = await response.json().catch(() => ({}));
-      setIsTestBilling(Boolean(data?.isTest));
-
-      if (data?.status === "active") {
-        setBanner({
-          status: "success",
-          msg: data?.message || "Premium is already active for this store.",
-        });
-        await refreshTier();
-        return;
-      }
-
-      if (data?.status === "needs_confirmation") {
-        if (!data?.confirmationUrl) {
-          throw new Error("Shopify did not return a billing confirmation URL.");
-        }
-
-        setBanner({
-          status: "success",
-          msg: "Redirecting you to Shopify billing...",
-        });
-        window.top.location.href = String(data.confirmationUrl);
-        return;
-      }
-
-      if (data?.status === "reauth_required") {
-        setBanner({
-          status: "critical",
-          msg: data?.message || "Your Shopify session expired. Restart the app and try again.",
-        });
-
-        if (data?.reauthUrl) {
-          window.top.location.href = data.reauthUrl.startsWith("/")
-            ? `https://${window.location.host}${data.reauthUrl}`
-            : String(data.reauthUrl);
-        }
-        return;
-      }
-
-      if (!response.ok || data?.status === "error") {
-        throw new Error(data?.message || data?.error || "Failed to start billing.");
-      }
-
-      throw new Error("Unexpected billing response from server.");
+      setBanner({
+        status: "success",
+        msg: "Redirecting you to Shopify billing...",
+      });
+      window.top.location.href = "/api/startSubscription";
+      return;
     } catch (error) {
       console.error(error);
       setBanner({
