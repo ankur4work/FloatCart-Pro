@@ -393,6 +393,7 @@ app.get("/api/hasActiveSubscription", async (_req, res) => {
       return res.status(HTTP_STATUS.OK).send({
         hasActiveSubscription: false,
         tier: FREE_PLAN,
+        isTest: IS_TEST,
       });
     }
 
@@ -429,6 +430,7 @@ app.get("/api/hasActiveSubscription", async (_req, res) => {
     return res.status(HTTP_STATUS.OK).send({
       hasActiveSubscription: true,
       tier,
+      isTest: IS_TEST,
     });
   } catch (error) {
     console.error("Failed to fetch subscription:", error);

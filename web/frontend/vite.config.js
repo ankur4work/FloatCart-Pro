@@ -64,7 +64,7 @@ export default defineConfig({
   define: {
     "process.env.SHOPIFY_API_KEY": JSON.stringify(process.env.SHOPIFY_API_KEY),
     "import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID": JSON.stringify(
-      process.env.VITE_FLOATCART_ACTIVATE_APP_ID || "REPLACE-WITH-FLOATCART-ACTIVATE-APP-ID"
+      process.env.VITE_FLOATCART_ACTIVATE_APP_ID || "ce516e3a-72dd-314a-b704-6d9d0416841f2fceedf0/floating-button"
     ),
     "import.meta.env.VITE_FLOATCART_PREMIUM_PRICE": JSON.stringify(
       process.env.FLOATCART_PREMIUM_PRICE || "30"

@@ -56,19 +56,23 @@ export default function HomePage() {
 
     try {
       const response = await fetchAuth("/api/getshop");
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok || !data?.shop) {
         throw new Error("Unable to resolve the store URL.");
       }
 
-      redirect.dispatch(
-        Redirect.Action.REMOTE,
-        `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=${import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID}`
-      );
+      const activateAppId = import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID;
+      if (!activateAppId || activateAppId.includes("REPLACE-WITH")) {
+        throw new Error("Theme activation is not configured yet.");
+      }
+
+      const themeEditorUrl = `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=${encodeURIComponent(activateAppId)}`;
+
+      window.top.location.href = themeEditorUrl;
     } catch (error) {
       console.error("Activate failed:", error);
-      setActivateError(error.message);
+      setActivateError(error.message || "Failed to open the theme editor.");
     }
   }
 
