@@ -8,7 +8,6 @@ import {
   Layout,
   Modal,
   Page,
-  SkeletonBodyText,
   Stack,
   TextContainer,
 } from "@shopify/polaris";
@@ -69,8 +68,8 @@ export default function Pricing() {
     []
   );
 
-  const [serverTier, setServerTier] = useState(null);
-  const [loading, setLoading] = useState({ page: true, action: null });
+  const [serverTier, setServerTier] = useState("free");
+  const [loading, setLoading] = useState({ page: false, action: null });
   const [confirm, setConfirm] = useState({ open: false, target: null });
   const [banner, setBanner] = useState({ status: null, msg: "" });
 
@@ -304,135 +303,131 @@ export default function Pricing() {
             return (
               <Layout.Section oneHalf key={plan.key}>
                 <Card sectioned>
-                  {loading.page ? (
-                    <SkeletonBodyText lines={8} />
-                  ) : (
+                  <div
+                    style={{
+                      borderRadius: 20,
+                      overflow: "hidden",
+                      border: isActive
+                        ? "2px solid #2563eb"
+                        : "1px solid rgba(17,24,39,0.08)",
+                      boxShadow: isActive
+                        ? "0 18px 50px rgba(37,99,235,0.18)"
+                        : "0 10px 30px rgba(15,23,42,0.06)",
+                    }}
+                  >
                     <div
                       style={{
-                        borderRadius: 20,
-                        overflow: "hidden",
-                        border: isActive
-                          ? "2px solid #2563eb"
-                          : "1px solid rgba(17,24,39,0.08)",
-                        boxShadow: isActive
-                          ? "0 18px 50px rgba(37,99,235,0.18)"
-                          : "0 10px 30px rgba(15,23,42,0.06)",
+                        padding: 24,
+                        background: plan.accent,
+                        color: plan.key === "premium" ? "#fff" : "#111827",
                       }}
                     >
-                      <div
-                        style={{
-                          padding: 24,
-                          background: plan.accent,
-                          color: plan.key === "premium" ? "#fff" : "#111827",
-                        }}
-                      >
-                        <Stack alignment="center" distribution="equalSpacing">
-                          <div>
-                            <div
-                              style={{
-                                fontSize: 13,
-                                fontWeight: 700,
-                                letterSpacing: 1,
-                                textTransform: "uppercase",
-                                opacity: 0.86,
-                              }}
-                            >
-                              {plan.badge}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: 30,
-                                fontWeight: 700,
-                                marginTop: 8,
-                              }}
-                            >
-                              {plan.name}
-                            </div>
-                          </div>
-                          {isActive ? (
-                            <div
-                              style={{
-                                padding: "6px 12px",
-                                borderRadius: 999,
-                                background:
-                                  plan.key === "premium"
-                                    ? "rgba(255,255,255,0.16)"
-                                    : "rgba(17,24,39,0.08)",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                textTransform: "uppercase",
-                              }}
-                            >
-                              Current
-                            </div>
-                          ) : null}
-                        </Stack>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "baseline",
-                            gap: 8,
-                            marginTop: 18,
-                          }}
-                        >
-                          <span style={{ fontSize: 40, fontWeight: 700 }}>
-                            {plan.price}
-                          </span>
-                          <span
+                      <Stack alignment="center" distribution="equalSpacing">
+                        <div>
+                          <div
                             style={{
-                              fontSize: 16,
+                              fontSize: 13,
+                              fontWeight: 700,
+                              letterSpacing: 1,
+                              textTransform: "uppercase",
                               opacity: 0.86,
                             }}
                           >
-                            {plan.key === "premium" ? "/month" : "forever"}
-                          </span>
+                            {plan.badge}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 30,
+                              fontWeight: 700,
+                              marginTop: 8,
+                            }}
+                          >
+                            {plan.name}
+                          </div>
                         </div>
-                        <p
+                        {isActive ? (
+                          <div
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: 999,
+                              background:
+                                plan.key === "premium"
+                                  ? "rgba(255,255,255,0.16)"
+                                  : "rgba(17,24,39,0.08)",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Current
+                          </div>
+                        ) : null}
+                      </Stack>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "baseline",
+                          gap: 8,
+                          marginTop: 18,
+                        }}
+                      >
+                        <span style={{ fontSize: 40, fontWeight: 700 }}>
+                          {plan.price}
+                        </span>
+                        <span
                           style={{
-                            marginTop: 12,
-                            marginBottom: 0,
-                            fontSize: 15,
-                            lineHeight: 1.6,
-                            color:
-                              plan.key === "premium"
-                                ? "rgba(255,255,255,0.88)"
-                                : "#4b5563",
+                            fontSize: 16,
+                            opacity: 0.86,
                           }}
                         >
-                          {plan.description}
-                        </p>
+                          {plan.key === "premium" ? "/month" : "forever"}
+                        </span>
                       </div>
+                      <p
+                        style={{
+                          marginTop: 12,
+                          marginBottom: 0,
+                          fontSize: 15,
+                          lineHeight: 1.6,
+                          color:
+                            plan.key === "premium"
+                              ? "rgba(255,255,255,0.88)"
+                              : "#4b5563",
+                        }}
+                      >
+                        {plan.description}
+                      </p>
+                    </div>
 
-                      <div style={{ padding: 24, background: "#fff" }}>
-                        <Stack vertical spacing="loose">
-                          {plan.features.map((feature) => (
-                            <FeatureRow
-                              key={`${plan.key}-${feature.label}`}
-                              enabled={feature.enabled}
-                              label={feature.label}
-                            />
-                          ))}
-                        </Stack>
+                    <div style={{ padding: 24, background: "#fff" }}>
+                      <Stack vertical spacing="loose">
+                        {plan.features.map((feature) => (
+                          <FeatureRow
+                            key={`${plan.key}-${feature.label}`}
+                            enabled={feature.enabled}
+                            label={feature.label}
+                          />
+                        ))}
+                      </Stack>
 
-                        <div style={{ marginTop: 24 }}>
-                          <Button
-                            primary={plan.key === "premium"}
-                            destructive={plan.key === "free" && activePlan === "premium"}
-                            fullWidth
-                            loading={isBusy}
-                            disabled={isActive}
-                            onClick={() => openConfirm(plan.key)}
-                          >
-                            {isActive
-                              ? `${plan.name} active`
-                              : plan.key === "premium"
-                              ? `Upgrade to Premium`
-                              : "Switch to Free"}
-                          </Button>
-                        </div>
+                      <div style={{ marginTop: 24 }}>
+                        <Button
+                          primary={plan.key === "premium"}
+                          destructive={plan.key === "free" && activePlan === "premium"}
+                          fullWidth
+                          loading={isBusy}
+                          disabled={isActive}
+                          onClick={() => openConfirm(plan.key)}
+                        >
+                          {isActive
+                            ? `${plan.name} active`
+                            : plan.key === "premium"
+                            ? `Upgrade to Premium`
+                            : "Switch to Free"}
+                        </Button>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </Card>
               </Layout.Section>
             );

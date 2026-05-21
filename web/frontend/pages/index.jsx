@@ -6,7 +6,6 @@ import {
   Card,
   Layout,
   Page,
-  SkeletonBodyText,
   Stack,
 } from "@shopify/polaris";
 import { useNavigate } from "react-router-dom";
@@ -15,8 +14,8 @@ import { useAuthenticatedFetch } from "../hooks";
 export default function HomePage() {
   const navigate = useNavigate();
   const fetchAuth = useAuthenticatedFetch();
-  const [tier, setTier] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [tier, setTier] = useState("free");
+  const [loading, setLoading] = useState(false);
   const [activateError, setActivateError] = useState("");
 
   useEffect(() => {
@@ -154,40 +153,36 @@ export default function HomePage() {
       <Layout>
         <Layout.Section>
           <Card sectioned>
-            {loading ? (
-              <SkeletonBodyText lines={4} />
-            ) : (
-              <div>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    background: statusTone.background,
-                    color: statusTone.color,
-                    fontWeight: 700,
-                    marginBottom: 16,
-                  }}
-                >
-                  {statusTone.label}
-                </div>
-                <h2 style={{ marginTop: 0, marginBottom: 10, color: "#111827" }}>
-                  Subscription status
-                </h2>
-                <p style={{ marginTop: 0, color: "#4b5563", lineHeight: 1.7 }}>
-                  {premiumActive
-                    ? "Your store has access to the full premium storefront controls and production-ready pricing flow."
-                    : "You're on the Free plan. Upgrade when you want advanced styling controls, richer storefront options, and a polished live setup."}
-                </p>
-                <div style={{ marginTop: 18 }}>
-                  <Button primary={premiumActive} onClick={() => navigate("/pricing")}>
-                    {premiumActive ? "Manage premium" : "Upgrade to Premium"}
-                  </Button>
-                </div>
+            <div>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 14px",
+                  borderRadius: 999,
+                  background: statusTone.background,
+                  color: statusTone.color,
+                  fontWeight: 700,
+                  marginBottom: 16,
+                }}
+              >
+                {statusTone.label}
               </div>
-            )}
+              <h2 style={{ marginTop: 0, marginBottom: 10, color: "#111827" }}>
+                Subscription status
+              </h2>
+              <p style={{ marginTop: 0, color: "#4b5563", lineHeight: 1.7 }}>
+                {premiumActive
+                  ? "Your store has access to the full premium storefront controls and production-ready pricing flow."
+                  : "You're on the Free plan. Upgrade when you want advanced styling controls, richer storefront options, and a polished live setup."}
+              </p>
+              <div style={{ marginTop: 18 }}>
+                <Button primary={premiumActive} onClick={() => navigate("/pricing")}>
+                  {premiumActive ? "Manage premium" : "Upgrade to Premium"}
+                </Button>
+              </div>
+            </div>
           </Card>
         </Layout.Section>
 
