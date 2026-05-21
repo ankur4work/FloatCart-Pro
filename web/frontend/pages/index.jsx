@@ -51,21 +51,9 @@ export default function HomePage() {
     setActivateError("");
 
     try {
-      const response = await fetch("/api/getshop", {
-        credentials: "same-origin",
-        headers: { Accept: "application/json" },
-      });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || !data?.shop || !String(data.shop).includes(".myshopify.com")) {
-        if (data?.reauthUrl) {
-          window.top.location.href = data.reauthUrl.startsWith("/")
-            ? `https://${window.location.host}${data.reauthUrl}`
-            : String(data.reauthUrl);
-          return;
-        }
-
-        throw new Error(data?.error || "Unable to resolve the store URL.");
+      const shop = new URLSearchParams(window.location.search).get("shop");
+      if (!shop || !shop.includes(".myshopify.com")) {
+        throw new Error("Open the app from Shopify admin so the store context is available.");
       }
 
       const activateAppId = import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID;
@@ -73,7 +61,7 @@ export default function HomePage() {
         throw new Error("Theme activation is not configured yet.");
       }
 
-      const themeEditorUrl = `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=${encodeURIComponent(activateAppId)}`;
+      const themeEditorUrl = `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${encodeURIComponent(activateAppId)}`;
 
       window.top.location.href = themeEditorUrl;
     } catch (error) {
