@@ -13,6 +13,7 @@ import { useAuthenticatedFetch } from "../hooks";
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const fetchAuth = useAuthenticatedFetch();
   const [tier, setTier] = useState("free");
   const [loading, setLoading] = useState(false);
   const [activateError, setActivateError] = useState("");
