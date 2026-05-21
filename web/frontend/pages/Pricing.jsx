@@ -81,9 +81,14 @@ export default function Pricing() {
   }, []);
 
   async function refreshTier() {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+
     try {
       setLoading((current) => ({ ...current, page: true }));
-      const response = await fetchAuth("/api/hasActiveSubscription");
+      const response = await fetchAuth("/api/hasActiveSubscription", {
+        signal: controller.signal,
+      });
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
@@ -96,9 +101,13 @@ export default function Pricing() {
       setServerTier("free");
       setBanner({
         status: "critical",
-        msg: "We couldn't load your subscription status. You can still retry.",
+        msg:
+          error?.name === "AbortError"
+            ? "Subscription status took too long to load, so we showed the Free plan. You can retry."
+            : "We couldn't load your subscription status. You can still retry.",
       });
     } finally {
+      window.clearTimeout(timeoutId);
       setLoading((current) => ({ ...current, page: false }));
     }
   }

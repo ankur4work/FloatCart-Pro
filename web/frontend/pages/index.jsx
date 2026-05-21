@@ -24,9 +24,14 @@ export default function HomePage() {
   }, []);
 
   async function loadSubscription() {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+
     try {
       setLoading(true);
-      const response = await fetchAuth("/api/hasActiveSubscription");
+      const response = await fetchAuth("/api/hasActiveSubscription", {
+        signal: controller.signal,
+      });
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
@@ -38,6 +43,7 @@ export default function HomePage() {
       console.error(error);
       setTier("free");
     } finally {
+      window.clearTimeout(timeoutId);
       setLoading(false);
     }
   }

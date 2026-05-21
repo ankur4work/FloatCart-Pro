@@ -10,9 +10,9 @@ dotenv.config();
 const mongoUri = process.env.MONGODB_URI;
 const mongoDatabase = process.env.MONGODB_DATABASE || "floatcart_pro";
 const appHost =
-  process.env.HOST ||
   process.env.SHOPIFY_APP_URL ||
-  "http://pvp8i6ljdc2w2l99ac012ma7.91.239.208.85.sslip.io";
+  process.env.HOST ||
+  "https://pvp8i6ljdc2w2l99ac012ma7.91.239.208.85.sslip.io";
 
 const shopify = shopifyApp({
   api: {
