@@ -9,10 +9,14 @@ import {
   Stack,
 } from "@shopify/polaris";
 import { useNavigate } from "react-router-dom";
+import { Redirect } from "@shopify/app-bridge/actions";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { useAuthenticatedFetch } from "../hooks";
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const app = useAppBridge();
+  const redirect = Redirect.create(app);
   const fetchAuth = useAuthenticatedFetch();
   const [tier, setTier] = useState("free");
   const [loading, setLoading] = useState(false);
@@ -58,9 +62,9 @@ export default function HomePage() {
         throw new Error("Unable to resolve the store URL.");
       }
 
-      window.open(
-        `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=${import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID}`,
-        "_blank"
+      redirect.dispatch(
+        Redirect.Action.REMOTE,
+        `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=${import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID}`
       );
     } catch (error) {
       console.error("Activate failed:", error);

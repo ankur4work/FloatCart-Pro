@@ -9,6 +9,8 @@ import {
   Stack,
 } from "@shopify/polaris";
 import { useNavigate } from "react-router-dom";
+import { Redirect } from "@shopify/app-bridge/actions";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { useAuthenticatedFetch } from "../hooks";
 
 const steps = [
@@ -28,6 +30,8 @@ const steps = [
 
 export default function Installation() {
   const navigate = useNavigate();
+  const app = useAppBridge();
+  const redirect = Redirect.create(app);
   const fetchAuth = useAuthenticatedFetch();
   const [error, setError] = useState("");
 
@@ -42,9 +46,9 @@ export default function Installation() {
         throw new Error("Unable to resolve the store URL.");
       }
 
-      window.open(
-        `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=${import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID}`,
-        "_blank"
+      redirect.dispatch(
+        Redirect.Action.REMOTE,
+        `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=${import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID}`
       );
     } catch (requestError) {
       console.error("Unable to open theme editor:", requestError);
