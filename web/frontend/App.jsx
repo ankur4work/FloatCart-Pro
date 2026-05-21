@@ -1,7 +1,6 @@
 import { BrowserRouter } from "react-router-dom";
 import Routes from "./Routes";
 import {
-  AppBridgeProvider,
   QueryProvider,
   PolarisProvider,
 } from "./components";
@@ -12,11 +11,9 @@ export default function App() {
   return (
     <PolarisProvider>
       <BrowserRouter>
-        <AppBridgeProvider>
-          <QueryProvider>
-            <Routes pages={pages} />
-          </QueryProvider>
-        </AppBridgeProvider>
+        <QueryProvider>
+          <Routes pages={pages} />
+        </QueryProvider>
       </BrowserRouter>
     </PolarisProvider>
   );

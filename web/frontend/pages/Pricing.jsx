@@ -12,8 +12,6 @@ import {
   TextContainer,
 } from "@shopify/polaris";
 import { CircleTickMinor, CancelSmallMinor } from "@shopify/polaris-icons";
-import { Redirect } from "@shopify/app-bridge/actions";
-import { useAppBridge } from "@shopify/app-bridge-react";
 import { useAuthenticatedFetch } from "../hooks";
 
 const PREMIUM_PRICE = Number(import.meta.env.VITE_FLOATCART_PREMIUM_PRICE || "30");
@@ -61,9 +59,7 @@ const planCards = [
 ];
 
 export default function Pricing() {
-  const app = useAppBridge();
   const fetchAuth = useAuthenticatedFetch();
-  const redirect = Redirect.create(app);
   const tick = useMemo(
     () => <Icon source={CircleTickMinor} color="success" />,
     []
@@ -180,7 +176,7 @@ export default function Pricing() {
           status: "success",
           msg: "Redirecting you to Shopify billing...",
         });
-        redirect.dispatch(Redirect.Action.REMOTE, String(data.confirmationUrl));
+        window.top.location.href = String(data.confirmationUrl);
         return;
       }
 
@@ -191,12 +187,9 @@ export default function Pricing() {
         });
 
         if (data?.reauthUrl) {
-          redirect.dispatch(
-            Redirect.Action.REMOTE,
-            data.reauthUrl.startsWith("/")
-              ? `https://${window.location.host}${data.reauthUrl}`
-              : String(data.reauthUrl)
-          );
+          window.top.location.href = data.reauthUrl.startsWith("/")
+            ? `https://${window.location.host}${data.reauthUrl}`
+            : String(data.reauthUrl);
         }
         return;
       }
