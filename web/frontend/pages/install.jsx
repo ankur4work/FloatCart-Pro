@@ -9,8 +9,6 @@ import {
   Stack,
 } from "@shopify/polaris";
 import { useNavigate } from "react-router-dom";
-import { Redirect } from "@shopify/app-bridge/actions";
-import { useAppBridge } from "@shopify/app-bridge-react";
 import { useAuthenticatedFetch } from "../hooks";
 
 const steps = [
@@ -30,16 +28,16 @@ const steps = [
 
 export default function Installation() {
   const navigate = useNavigate();
-  const app = useAppBridge();
-  const redirect = Redirect.create(app);
-  const fetchAuth = useAuthenticatedFetch();
   const [error, setError] = useState("");
 
   async function openThemeEditor() {
     setError("");
 
     try {
-      const response = await fetchAuth("/api/getshop");
+      const response = await fetch("/api/getshop", {
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+      });
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok || !data?.shop) {
