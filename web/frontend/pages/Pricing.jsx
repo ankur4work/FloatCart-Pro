@@ -77,6 +77,7 @@ export default function Pricing() {
   const [loading, setLoading] = useState({ page: false, action: null });
   const [confirm, setConfirm] = useState({ open: false, target: null });
   const [banner, setBanner] = useState({ status: null, msg: "" });
+  const [isTestBilling, setIsTestBilling] = useState(false);
 
   const activePlan = serverTier && serverTier !== "free" ? "premium" : "free";
 
@@ -100,6 +101,7 @@ export default function Pricing() {
       }
 
       setServerTier(data?.tier || "free");
+      setIsTestBilling(Boolean(data?.isTest));
     } catch (error) {
       console.error(error);
       setServerTier("free");
@@ -158,29 +160,52 @@ export default function Pricing() {
 
       const response = await fetchAuth("/api/createSubscription");
       const data = await response.json().catch(() => ({}));
+      setIsTestBilling(Boolean(data?.isTest));
 
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to start billing.");
-      }
-
-      if (data?.isActiveSubscription) {
+      if (data?.status === "active") {
         setBanner({
           status: "success",
-          msg: "Premium is already active for this store.",
+          msg: data?.message || "Premium is already active for this store.",
         });
         await refreshTier();
         return;
       }
 
-      if (!data?.confirmationUrl) {
-        throw new Error("Shopify did not return a billing confirmation URL.");
+      if (data?.status === "needs_confirmation") {
+        if (!data?.confirmationUrl) {
+          throw new Error("Shopify did not return a billing confirmation URL.");
+        }
+
+        setBanner({
+          status: "success",
+          msg: "Redirecting you to Shopify billing...",
+        });
+        redirect.dispatch(Redirect.Action.REMOTE, String(data.confirmationUrl));
+        return;
       }
 
-      setBanner({
-        status: "success",
-        msg: "Redirecting you to Shopify billing...",
-      });
-      redirect.dispatch(Redirect.Action.REMOTE, String(data.confirmationUrl));
+      if (data?.status === "reauth_required") {
+        setBanner({
+          status: "critical",
+          msg: data?.message || "Your Shopify session expired. Restart the app and try again.",
+        });
+
+        if (data?.reauthUrl) {
+          redirect.dispatch(
+            Redirect.Action.REMOTE,
+            data.reauthUrl.startsWith("/")
+              ? `https://${window.location.host}${data.reauthUrl}`
+              : String(data.reauthUrl)
+          );
+        }
+        return;
+      }
+
+      if (!response.ok || data?.status === "error") {
+        throw new Error(data?.message || data?.error || "Failed to start billing.");
+      }
+
+      throw new Error("Unexpected billing response from server.");
     } catch (error) {
       console.error(error);
       setBanner({
@@ -259,6 +284,12 @@ export default function Pricing() {
             onDismiss={() => setBanner({ status: null, msg: "" })}
           >
             {banner.msg}
+          </Banner>
+        ) : null}
+
+        {isTestBilling ? (
+          <Banner status="info">
+            Billing test mode is enabled for this environment.
           </Banner>
         ) : null}
 

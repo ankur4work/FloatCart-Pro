@@ -75,6 +75,7 @@ app.post(
 const APP_NAMESPACE = "floatcart_pro";
 const APP_NAME = "FloatCart Pro";
 const ANALYTICS_DB_PREFIX = "floatcart_pro";
+const APP_HOST = process.env.SHOPIFY_APP_URL || process.env.HOST || "";
 const HTTP_STATUS = {
   OK: 200,
   BAD_REQUEST: 400,
@@ -204,19 +205,56 @@ const shopDetailsQuery = `
 }`;
 
 app.get("/api/createSubscription", async (_req, res) => {
-  try {
-    const session = res.locals.shopify.session;
+  const session = res.locals.shopify.session;
+  const shop = session?.shop || null;
 
+  console.info("[Billing] createSubscription:start", {
+    shop,
+    plan: PREMIUM_PLAN,
+    isTest: IS_TEST,
+    appHost: APP_HOST,
+    hasSession: Boolean(session),
+  });
+
+  if (!session || !shop) {
+    console.error("[Billing] createSubscription:session_missing", {
+      plan: PREMIUM_PLAN,
+      isTest: IS_TEST,
+      appHost: APP_HOST,
+    });
+
+    return res.status(HTTP_STATUS.UNAUTHORIZED).send({
+      status: "reauth_required",
+      plan: PREMIUM_PLAN,
+      shop,
+      isTest: IS_TEST,
+      reason: "session_missing",
+      message: "Shopify session is missing or expired.",
+      reauthUrl: shop ? `/api/auth?shop=${encodeURIComponent(shop)}` : "/api/auth",
+    });
+  }
+
+  try {
     const hasPayment = await shopify.api.billing.check({
       session,
       plans: [PREMIUM_PLAN],
       isTest: IS_TEST,
     });
 
+    console.info("[Billing] createSubscription:check_complete", {
+      shop,
+      plan: PREMIUM_PLAN,
+      isTest: IS_TEST,
+      hasPayment,
+    });
+
     if (hasPayment) {
       return res.status(HTTP_STATUS.OK).send({
-        isActiveSubscription: true,
+        status: "active",
         plan: PREMIUM_PLAN,
+        shop,
+        isTest: IS_TEST,
+        message: "Premium is already active for this store.",
       });
     }
 
@@ -226,15 +264,72 @@ app.get("/api/createSubscription", async (_req, res) => {
       isTest: IS_TEST,
     });
 
-    return res.status(HTTP_STATUS.OK).send({
-      isActiveSubscription: false,
+    if (!confirmationUrl) {
+      console.error("[Billing] createSubscription:missing_confirmation_url", {
+        shop,
+        plan: PREMIUM_PLAN,
+        isTest: IS_TEST,
+      });
+
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
+        status: "error",
+        plan: PREMIUM_PLAN,
+        shop,
+        isTest: IS_TEST,
+        reason: "missing_confirmation_url",
+        message: "Shopify did not return a billing confirmation URL.",
+      });
+    }
+
+    console.info("[Billing] createSubscription:confirmation_ready", {
+      shop,
       plan: PREMIUM_PLAN,
+      isTest: IS_TEST,
+      hasConfirmationUrl: true,
+    });
+
+    return res.status(HTTP_STATUS.OK).send({
+      status: "needs_confirmation",
+      plan: PREMIUM_PLAN,
+      shop,
+      isTest: IS_TEST,
       confirmationUrl,
     });
   } catch (error) {
-    console.error("Failed to create subscription:", error);
+    const message = error?.message || "Failed to create subscription";
+    const reason = /auth|session|reauthor/i.test(message)
+      ? "reauth_required"
+      : "billing_request_failed";
+
+    console.error("[Billing] createSubscription:error", {
+      shop,
+      plan: PREMIUM_PLAN,
+      isTest: IS_TEST,
+      appHost: APP_HOST,
+      reason,
+      message,
+      stack: error?.stack,
+    });
+
+    if (reason === "reauth_required") {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).send({
+        status: "reauth_required",
+        plan: PREMIUM_PLAN,
+        shop,
+        isTest: IS_TEST,
+        reason,
+        message: "Shopify session expired. Restart the app and try again.",
+        reauthUrl: `/api/auth?shop=${encodeURIComponent(shop)}`,
+      });
+    }
+
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
-      error: "Failed to create subscription",
+      status: "error",
+      plan: PREMIUM_PLAN,
+      shop,
+      isTest: IS_TEST,
+      reason,
+      message,
     });
   }
 });
