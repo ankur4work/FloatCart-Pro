@@ -480,7 +480,15 @@ app.get("/api/floatcart-proxy/plan-info", async (_req, res) => {
 app.get("/api/getshop", async (_req, res) => {
   try {
     const session = res.locals.shopify.session;
-    const shopName = session ? session.shop : "Shop name not found";
+    const shopName = session?.shop;
+
+    if (!shopName) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        error: "No active Shopify session found.",
+        reauthUrl: "/api/auth",
+      });
+    }
+
     res.json({ shop: shopName });
   } catch (err) {
     console.error("Error fetching shop:", err);

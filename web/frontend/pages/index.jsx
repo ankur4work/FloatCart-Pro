@@ -57,8 +57,15 @@ export default function HomePage() {
       });
       const data = await response.json().catch(() => ({}));
 
-      if (!response.ok || !data?.shop) {
-        throw new Error("Unable to resolve the store URL.");
+      if (!response.ok || !data?.shop || !String(data.shop).includes(".myshopify.com")) {
+        if (data?.reauthUrl) {
+          window.top.location.href = data.reauthUrl.startsWith("/")
+            ? `https://${window.location.host}${data.reauthUrl}`
+            : String(data.reauthUrl);
+          return;
+        }
+
+        throw new Error(data?.error || "Unable to resolve the store URL.");
       }
 
       const activateAppId = import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID;
