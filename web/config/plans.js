@@ -12,13 +12,13 @@ export const PREMIUM_PLAN_KEY =
   process.env.SHOPIFY_PREMIUM_PLAN_KEY || "floatcart-pro-premium";
 export const PREMIUM_PRICE = parseNumber(
   process.env.SHOPIFY_PREMIUM_PRICE,
-  149,
+  30,
 );
 export const PREMIUM_CURRENCY =
   process.env.SHOPIFY_PREMIUM_CURRENCY || "USD";
 export const PREMIUM_TRIAL_DAYS = parseNumber(
   process.env.SHOPIFY_PREMIUM_TRIAL_DAYS,
-  0,
+  3,
 );
 export const IS_TEST =
   String(process.env.SHOPIFY_BILLING_TEST_MODE).toLowerCase() === "true";

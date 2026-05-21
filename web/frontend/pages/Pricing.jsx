@@ -16,7 +16,10 @@ import { Redirect } from "@shopify/app-bridge/actions";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useAuthenticatedFetch } from "../hooks";
 
-const PREMIUM_PRICE = 149;
+const PREMIUM_PRICE = Number(import.meta.env.VITE_SHOPIFY_PREMIUM_PRICE || "30");
+const PREMIUM_TRIAL_DAYS = Number(
+  import.meta.env.VITE_SHOPIFY_PREMIUM_TRIAL_DAYS || "3"
+);
 
 const planCards = [
   {
@@ -43,7 +46,9 @@ const planCards = [
     accent: "linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #2563eb 100%)",
     badge: "Production",
     description:
-      "Unlock the full FloatCart experience for live stores with advanced controls and conversion-focused storefront options.",
+      PREMIUM_TRIAL_DAYS > 0
+        ? `Unlock the full FloatCart experience for live stores with advanced controls and conversion-focused storefront options, with a ${PREMIUM_TRIAL_DAYS}-day free trial.`
+        : "Unlock the full FloatCart experience for live stores with advanced controls and conversion-focused storefront options.",
     features: [
       { label: "Floating cart button", enabled: true },
       { label: "Advanced customization settings", enabled: true },
@@ -210,7 +215,9 @@ export default function Pricing() {
         primaryAction={{
           content:
             confirm.target === "premium"
-              ? `Continue for $${PREMIUM_PRICE}/month`
+              ? PREMIUM_TRIAL_DAYS > 0
+                ? `Start ${PREMIUM_TRIAL_DAYS}-day trial, then $${PREMIUM_PRICE}/month`
+                : `Continue for $${PREMIUM_PRICE}/month`
               : "Cancel Premium",
           onAction: runConfirm,
           loading: loading.action === confirm.target,
@@ -227,9 +234,9 @@ export default function Pricing() {
           <TextContainer>
             {confirm.target === "premium" ? (
               <p>
-                Premium unlocks the full storefront experience, advanced
-                customization, and product total price support for
-                your dedicated FloatCart Pro domain.
+                {PREMIUM_TRIAL_DAYS > 0
+                  ? `Premium unlocks the full storefront experience, advanced customization, and product total price support for your dedicated FloatCart Pro domain. Your store will start with a ${PREMIUM_TRIAL_DAYS}-day free trial, then move to $${PREMIUM_PRICE}/month.`
+                  : `Premium unlocks the full storefront experience, advanced customization, and product total price support for your dedicated FloatCart Pro domain.`}
               </p>
             ) : (
               <p>
