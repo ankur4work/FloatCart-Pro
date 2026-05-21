@@ -66,11 +66,11 @@ export default defineConfig({
     "import.meta.env.VITE_FLOATCART_ACTIVATE_APP_ID": JSON.stringify(
       process.env.VITE_FLOATCART_ACTIVATE_APP_ID || "REPLACE-WITH-FLOATCART-ACTIVATE-APP-ID"
     ),
-    "import.meta.env.VITE_SHOPIFY_PREMIUM_PRICE": JSON.stringify(
-      process.env.SHOPIFY_PREMIUM_PRICE || "30"
+    "import.meta.env.VITE_FLOATCART_PREMIUM_PRICE": JSON.stringify(
+      process.env.FLOATCART_PREMIUM_PRICE || "30"
     ),
-    "import.meta.env.VITE_SHOPIFY_PREMIUM_TRIAL_DAYS": JSON.stringify(
-      process.env.SHOPIFY_PREMIUM_TRIAL_DAYS || "3"
+    "import.meta.env.VITE_FLOATCART_PREMIUM_TRIAL_DAYS": JSON.stringify(
+      process.env.FLOATCART_PREMIUM_TRIAL_DAYS || "3"
     ),
   },
   resolve: {

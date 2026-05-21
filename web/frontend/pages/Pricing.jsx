@@ -16,9 +16,9 @@ import { Redirect } from "@shopify/app-bridge/actions";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useAuthenticatedFetch } from "../hooks";
 
-const PREMIUM_PRICE = Number(import.meta.env.VITE_SHOPIFY_PREMIUM_PRICE || "30");
+const PREMIUM_PRICE = Number(import.meta.env.VITE_FLOATCART_PREMIUM_PRICE || "30");
 const PREMIUM_TRIAL_DAYS = Number(
-  import.meta.env.VITE_SHOPIFY_PREMIUM_TRIAL_DAYS || "3"
+  import.meta.env.VITE_FLOATCART_PREMIUM_TRIAL_DAYS || "3"
 );
 
 const planCards = [
