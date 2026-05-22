@@ -12,7 +12,13 @@ export default function ExitIframe() {
     if (!redirectUri) return;
 
     const decodedUri = decodeURIComponent(redirectUri);
-    const url = new URL(decodedUri);
+    let url;
+
+    try {
+      url = new URL(decodedUri);
+    } catch {
+      return;
+    }
 
     if (url.hostname === window.location.hostname) {
       window.top.location.href = decodedUri;
