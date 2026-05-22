@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Banner,
   Button,
@@ -8,8 +8,7 @@ import {
   Page,
   Stack,
 } from "@shopify/polaris";
-import { useNavigate } from "react-router-dom";
-import { useAuthenticatedFetch } from "../hooks";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const steps = [
   {
@@ -28,7 +27,12 @@ const steps = [
 
 export default function Installation() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [error, setError] = useState("");
+  const shopQuery = useMemo(() => {
+    const shop = new URLSearchParams(location.search).get("shop");
+    return shop ? `?shop=${encodeURIComponent(shop)}` : "";
+  }, [location.search]);
 
   async function openThemeEditor() {
     setError("");
@@ -119,10 +123,10 @@ export default function Installation() {
               <Button primary onClick={openThemeEditor}>
                 Open theme editor
               </Button>
-              <Button onClick={() => navigate("/pricing")}>
+              <Button onClick={() => navigate(`/pricing${shopQuery}`)}>
                 Review Premium plan
               </Button>
-              <Button onClick={() => navigate("/")}>Back to dashboard</Button>
+              <Button onClick={() => navigate(`/${shopQuery}`)}>Back to dashboard</Button>
             </Stack>
           </div>
         </div>

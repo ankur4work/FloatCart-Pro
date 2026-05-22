@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Button,
   Card,
@@ -7,7 +7,7 @@ import {
   Stack,
   TextContainer,
 } from "@shopify/polaris";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const faqs = [
   {
@@ -34,6 +34,11 @@ const faqs = [
 
 export default function Support() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const shopQuery = useMemo(() => {
+    const shop = new URLSearchParams(location.search).get("shop");
+    return shop ? `?shop=${encodeURIComponent(shop)}` : "";
+  }, [location.search]);
 
   return (
     <Page
@@ -93,8 +98,8 @@ export default function Support() {
             <Button primary onClick={() => window.open("mailto:REPLACE-WITH-SUPPORT-EMAIL")}>
               Email support
             </Button>
-            <Button onClick={() => navigate("/install")}>Open setup guide</Button>
-            <Button onClick={() => navigate("/pricing")}>Review pricing</Button>
+            <Button onClick={() => navigate(`/install${shopQuery}`)}>Open setup guide</Button>
+            <Button onClick={() => navigate(`/pricing${shopQuery}`)}>Review pricing</Button>
           </Stack>
         </div>
       </div>

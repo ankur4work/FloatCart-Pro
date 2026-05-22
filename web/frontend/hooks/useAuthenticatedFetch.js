@@ -22,9 +22,17 @@ function checkHeadersForReauthorization(headers) {
     const authUrlHeader =
       headers.get("X-Shopify-API-Request-Failure-Reauthorize-Url") ||
       `/api/auth`;
+    const currentShop = new URLSearchParams(window.location.search).get("shop");
+    const authUrl = new URL(
+      authUrlHeader.startsWith("/")
+        ? `https://${window.location.host}${authUrlHeader}`
+        : authUrlHeader
+    );
 
-    window.top.location.href = authUrlHeader.startsWith("/")
-      ? `https://${window.location.host}${authUrlHeader}`
-      : authUrlHeader;
+    if (currentShop && !authUrl.searchParams.get("shop")) {
+      authUrl.searchParams.set("shop", currentShop);
+    }
+
+    window.top.location.href = authUrl.toString();
   }
 }

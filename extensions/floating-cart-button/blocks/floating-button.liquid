@@ -133,7 +133,7 @@
   
   </style>
  
-    <div class="mx_floating_sc-hSdWYo   mx_desing_Select_1 mx_floating_elpySv mx_floating_btn   " data-shop="{{ shopUrl }}">
+    <div class="mx_floating_sc-hSdWYo   mx_desing_Select_1 mx_floating_elpySv mx_floating_btn" data-shop="{{ shop.permanent_domain }}">
 
       <div class="mx_floating_viewcart-box" onclick="clickCartLink()">
         <div class="mx_poweredby_floatcart">Free plan</div>
@@ -271,7 +271,7 @@ color:white;
   }
   </style>
 
-    <div class="mx_floating_sc-hSdWYo mx_floating_elpySv mx_design_2_hideplan mx_floating_btn " onclick="clickCartLink()"  data-shop="{{ shopUrl}}">
+    <div class="mx_floating_sc-hSdWYo mx_floating_elpySv mx_design_2_hideplan mx_floating_btn" onclick="clickCartLink()" data-shop="{{ shop.permanent_domain }}">
       <div class="mx_floating_viewcart-box mx_desin_background">
         <div class="mx_floating_flexview">
           <div class="mx_floating_cartData">
@@ -298,32 +298,32 @@ color:white;
 
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-  let plan = "free"; // default plan
+  let plan = "free";
 
   const floatingWrapper = document.querySelector('.mx_floating_elpySv');
-    const poweredBy = document.querySelector('.mx_poweredby_floatcart');
+  const poweredBy = document.querySelector('.mx_poweredby_floatcart');
   if (floatingWrapper) {
-    floatingWrapper.style.visibility = "hidden"; // hide until logic done
+    floatingWrapper.style.visibility = "hidden";
   }
 
-  // ✅ Always run API check
   try {
-    const shopUrl = "{{ shop.url }}";
-    const shop = shopUrl.replace(/^https?:\/\//, "");
-    
-    const res = await fetch(`/apps/floatcart-pro/hasSubscription?shop=${shop}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" }
-    });
+    const shop = {{ shop.permanent_domain | json }};
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.tier) {
-        plan = data.tier;
+    if (shop) {
+      const res = await fetch(`/apps/floatcart-pro/hasSubscription?shop=${encodeURIComponent(shop)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.tier) {
+          plan = data.tier;
+        }
       }
     }
   } catch (err) {
-    console.warn("⚠️ Subscription check failed, defaulting to free", err);
+    console.warn("Subscription check failed, defaulting to free", err);
   }
 
   // ✅ This will now always run

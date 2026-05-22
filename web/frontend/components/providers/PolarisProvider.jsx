@@ -1,14 +1,24 @@
 import { useCallback } from "react";
 import { AppProvider } from "@shopify/polaris";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import translations from "@shopify/polaris/locales/en.json";
 import "@shopify/polaris/build/esm/styles.css";
 
 function AppBridgeLink({ url, children, external, ...rest }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const handleClick = useCallback(() => {
-    navigate(url);
-  }, [url]);
+    const nextUrl = new URL(url, window.location.origin);
+
+    if (!nextUrl.searchParams.get("shop")) {
+      const currentShop = new URLSearchParams(location.search).get("shop");
+      if (currentShop) {
+        nextUrl.searchParams.set("shop", currentShop);
+      }
+    }
+
+    navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+  }, [location.search, navigate, url]);
 
   const IS_EXTERNAL_LINK_REGEX = /^(?:[a-z][a-z\d+.-]*:|\/\/)/;
 

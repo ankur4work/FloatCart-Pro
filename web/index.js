@@ -75,7 +75,46 @@ app.post(
 const APP_NAMESPACE = "floatcart_pro";
 const APP_NAME = "FloatCart Pro";
 const ANALYTICS_DB_PREFIX = "floatcart_pro";
-const APP_HOST = process.env.SHOPIFY_APP_URL || process.env.HOST || "";
+const DEFAULT_APP_URL = "https://pvp8i6ljdc2w2l99ac012ma7.91.239.208.85.sslip.io";
+
+function resolveAppUrl() {
+  const candidates = [
+    process.env.SHOPIFY_APP_URL,
+    process.env.HOST,
+    DEFAULT_APP_URL,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    try {
+      const parsed = new URL(candidate);
+      const hasInvalidAuth = Boolean(parsed.username || parsed.password);
+      const hasInvalidSearch = Boolean(parsed.search || parsed.hash);
+      const hasInvalidPath = parsed.pathname && parsed.pathname !== "/";
+      const hasInvalidPort = Boolean(parsed.port && parsed.port !== "443");
+
+      if (
+        parsed.protocol !== "https:" ||
+        !parsed.hostname ||
+        hasInvalidAuth ||
+        hasInvalidSearch ||
+        hasInvalidPath ||
+        hasInvalidPort
+      ) {
+        continue;
+      }
+
+      return parsed.origin;
+    } catch {
+      continue;
+    }
+  }
+
+  return DEFAULT_APP_URL;
+}
+
+const APP_HOST = resolveAppUrl();
 const HTTP_STATUS = {
   OK: 200,
   BAD_REQUEST: 400,
@@ -91,8 +130,9 @@ app.get("/api/floating-cart/hasSubscription", async (req, res) => {
     const { shop } = req.query;
 
     if (!shop) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send({
-        error: "Missing 'shop' parameter",
+      return res.status(HTTP_STATUS.OK).send({
+        hasActiveSubscription: false,
+        tier: FREE_PLAN,
       });
     }
 
@@ -100,8 +140,9 @@ app.get("/api/floating-cart/hasSubscription", async (req, res) => {
     const session = await collection.findOne({ shop });
 
     if (!session) {
-      return res.status(HTTP_STATUS.UNAUTHORIZED).send({
-        error: "Unauthorized: Session not found",
+      return res.status(HTTP_STATUS.OK).send({
+        hasActiveSubscription: false,
+        tier: FREE_PLAN,
       });
     }
 

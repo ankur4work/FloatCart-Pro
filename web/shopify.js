@@ -7,12 +7,48 @@ import { billingConfig } from "./config/plans.js";
 
 dotenv.config();
 
+const DEFAULT_APP_URL = "https://pvp8i6ljdc2w2l99ac012ma7.91.239.208.85.sslip.io";
+
+function resolveAppUrl() {
+  const candidates = [
+    process.env.SHOPIFY_APP_URL,
+    process.env.HOST,
+    DEFAULT_APP_URL,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    try {
+      const parsed = new URL(candidate);
+      const hasInvalidAuth = Boolean(parsed.username || parsed.password);
+      const hasInvalidSearch = Boolean(parsed.search || parsed.hash);
+      const hasInvalidPath = parsed.pathname && parsed.pathname !== "/";
+      const hasInvalidPort = Boolean(parsed.port && parsed.port !== "443");
+
+      if (
+        parsed.protocol !== "https:" ||
+        !parsed.hostname ||
+        hasInvalidAuth ||
+        hasInvalidSearch ||
+        hasInvalidPath ||
+        hasInvalidPort
+      ) {
+        continue;
+      }
+
+      return parsed.origin;
+    } catch {
+      continue;
+    }
+  }
+
+  return DEFAULT_APP_URL;
+}
+
 const mongoUri = process.env.MONGODB_URI;
 const mongoDatabase = process.env.MONGODB_DATABASE || "floatcart_pro";
-const appHost =
-  process.env.SHOPIFY_APP_URL ||
-  process.env.HOST ||
-  "https://pvp8i6ljdc2w2l99ac012ma7.91.239.208.85.sslip.io";
+const appHost = resolveAppUrl();
 
 const shopify = shopifyApp({
   api: {

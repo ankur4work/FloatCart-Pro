@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Banner,
   Button,
@@ -8,15 +8,20 @@ import {
   Page,
   Stack,
 } from "@shopify/polaris";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthenticatedFetch } from "../hooks";
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const fetchAuth = useAuthenticatedFetch();
   const [tier, setTier] = useState("free");
   const [loading, setLoading] = useState(false);
   const [activateError, setActivateError] = useState("");
+  const shopQuery = useMemo(() => {
+    const shop = new URLSearchParams(location.search).get("shop");
+    return shop ? `?shop=${encodeURIComponent(shop)}` : "";
+  }, [location.search]);
 
   useEffect(() => {
     loadSubscription();
@@ -146,8 +151,8 @@ export default function HomePage() {
             <Button primary onClick={handleActivateCart}>
               Open theme editor
             </Button>
-            <Button onClick={() => navigate("/pricing")}>View pricing</Button>
-            <Button onClick={() => navigate("/install")}>Setup guide</Button>
+            <Button onClick={() => navigate(`/pricing${shopQuery}`)}>View pricing</Button>
+            <Button onClick={() => navigate(`/install${shopQuery}`)}>Setup guide</Button>
           </Stack>
         </div>
       </div>
@@ -180,7 +185,7 @@ export default function HomePage() {
                   : "You're on the Free plan. Upgrade when you want advanced styling controls, richer storefront options, and a polished live setup."}
               </p>
               <div style={{ marginTop: 18 }}>
-                <Button primary={premiumActive} onClick={() => navigate("/pricing")}>
+                <Button primary={premiumActive} onClick={() => navigate(`/pricing${shopQuery}`)}>
                   {premiumActive ? "Manage premium" : "Upgrade to Premium"}
                 </Button>
               </div>
