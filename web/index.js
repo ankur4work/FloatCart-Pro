@@ -659,7 +659,7 @@ app.get("/api/store-details", withAuthenticatedSession(async (_req, res) => {
       `Failed to fetch store details: ${error.message}`
     );
   }
-});
+}));
 
 app.use(shopify.cspHeaders());
 app.use(serveStatic(STATIC_PATH, { index: false }));
