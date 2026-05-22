@@ -212,7 +212,50 @@ app.post("/api/floatcart-proxy/:event", async (req, res) => {
   }
 });
 
-app.use("/api/*", shopify.validateAuthenticatedSession());
+const authenticatedApi = shopify.validateAuthenticatedSession();
+
+function isSessionFailure(error) {
+  const message = String(error?.message || "");
+  const responseCode = error?.response?.code;
+
+  return (
+    responseCode === 401 ||
+    responseCode === 403 ||
+    /forbidden|unauthorized|access token|authorization header|session/i.test(message)
+  );
+}
+
+function withAuthenticatedSession(handler) {
+  return async (req, res, next) => {
+    try {
+      await authenticatedApi(req, res, async (middlewareError) => {
+        if (middlewareError) {
+          throw middlewareError;
+        }
+
+        try {
+          await handler(req, res, next);
+        } catch (handlerError) {
+          next(handlerError);
+        }
+      });
+    } catch (error) {
+      if (isSessionFailure(error)) {
+        const shop = res.locals.shopify?.session?.shop || req.query?.shop || "";
+        return res.status(HTTP_STATUS.UNAUTHORIZED).send({
+          error: "Shopify session is missing or expired.",
+          reauthUrl: shop ? `/api/auth?shop=${encodeURIComponent(shop)}` : "/api/auth",
+        });
+      }
+
+      return next(error);
+    }
+  };
+}
+
+app.use("/api/*", (req, res, next) => {
+  next();
+});
 
 const handleError = (res, statusCode, message) => {
   console.error(message);
@@ -245,7 +288,7 @@ const shopDetailsQuery = `
   }
 }`;
 
-app.get("/api/createSubscription", async (_req, res) => {
+app.get("/api/createSubscription", withAuthenticatedSession(async (_req, res) => {
   const session = res.locals.shopify.session;
   const shop = session?.shop || null;
 
@@ -373,9 +416,9 @@ app.get("/api/createSubscription", async (_req, res) => {
       message,
     });
   }
-});
+}));
 
-app.get("/api/startSubscription", async (_req, res) => {
+app.get("/api/startSubscription", withAuthenticatedSession(async (_req, res) => {
   const session = res.locals.shopify.session;
   const shop = session?.shop || null;
 
@@ -415,9 +458,9 @@ app.get("/api/startSubscription", async (_req, res) => {
 
     return res.redirect(`/pricing?billing_error=${encodeURIComponent(message)}`);
   }
-});
+}));
 
-app.get("/api/cancelSubscription", async (_req, res) => {
+app.get("/api/cancelSubscription", withAuthenticatedSession(async (_req, res) => {
   try {
     const session = res.locals.shopify.session;
 
@@ -464,9 +507,9 @@ app.get("/api/cancelSubscription", async (_req, res) => {
       error: "Failed to cancel subscription",
     });
   }
-});
+}));
 
-app.get("/api/hasActiveSubscription", async (_req, res) => {
+app.get("/api/hasActiveSubscription", withAuthenticatedSession(async (_req, res) => {
   try {
     const session = res.locals.shopify.session;
     const tier = await getPlanTier(session);
@@ -521,7 +564,7 @@ app.get("/api/hasActiveSubscription", async (_req, res) => {
       error: "Failed to fetch subscription",
     });
   }
-});
+}));
 
 function getOrderLimit(planTier) {
   return planTier === PREMIUM_PLAN ? Number.MAX_SAFE_INTEGER : 100;
@@ -536,7 +579,7 @@ async function getCurrentOrderCount(storeId) {
   return 0;
 }
 
-app.get("/api/floatcart-proxy/plan-info", async (_req, res) => {
+app.get("/api/floatcart-proxy/plan-info", withAuthenticatedSession(async (_req, res) => {
   try {
     const session = res.locals.shopify.session;
     const storeId = await getStoreId(session);
@@ -558,9 +601,9 @@ app.get("/api/floatcart-proxy/plan-info", async (_req, res) => {
       error: "Failed to get plan information",
     });
   }
-});
+}));
 
-app.get("/api/getshop", async (_req, res) => {
+app.get("/api/getshop", withAuthenticatedSession(async (_req, res) => {
   try {
     const session = res.locals.shopify.session;
     const shopName = session?.shop;
@@ -579,9 +622,9 @@ app.get("/api/getshop", async (_req, res) => {
       error: "Failed to fetch shop",
     });
   }
-});
+}));
 
-app.get("/api/store-details", async (_req, res) => {
+app.get("/api/store-details", withAuthenticatedSession(async (_req, res) => {
   const session = res.locals.shopify.session;
   if (!session) {
     return handleError(
