@@ -236,7 +236,15 @@ function withAuthenticatedSession(handler) {
         try {
           await handler(req, res, next);
         } catch (handlerError) {
-          next(handlerError);
+          if (isSessionFailure(handlerError)) {
+            const shop = res.locals.shopify?.session?.shop || req.query?.shop || "";
+            return res.status(HTTP_STATUS.UNAUTHORIZED).send({
+              error: "Shopify session is missing or expired.",
+              reauthUrl: shop ? `/api/auth?shop=${encodeURIComponent(shop)}` : "/api/auth",
+            });
+          }
+
+          return next(handlerError);
         }
       });
     } catch (error) {
@@ -663,7 +671,7 @@ app.get("/api/store-details", withAuthenticatedSession(async (_req, res) => {
 
 app.use(shopify.cspHeaders());
 app.use(serveStatic(STATIC_PATH, { index: false }));
-app.use("/*", async (_req, res) => {
+app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res) => {
   return res
     .status(HTTP_STATUS.OK)
     .set("Content-Type", "text/html")

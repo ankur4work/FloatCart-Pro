@@ -63,6 +63,11 @@ function redirectToAuth(targetUrl) {
     authUrl.searchParams.set("shop", currentShop);
   }
 
-  window.top.location.href = authUrl.toString();
+  if (window.top) {
+    window.top.location.assign(authUrl.toString());
+    return;
+  }
+
+  window.location.assign(authUrl.toString());
 }
 

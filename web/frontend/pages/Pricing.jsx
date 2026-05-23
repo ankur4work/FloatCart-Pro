@@ -158,7 +158,12 @@ export default function Pricing() {
         status: "success",
         msg: "Redirecting you to Shopify billing...",
       });
-      window.top.location.href = `/api/startSubscription${window.location.search}`;
+      const billingUrl = `/api/startSubscription${window.location.search}`;
+      if (window.top) {
+        window.top.location.assign(billingUrl);
+      } else {
+        window.location.assign(billingUrl);
+      }
       return;
     } catch (error) {
       console.error(error);
