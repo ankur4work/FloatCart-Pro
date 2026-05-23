@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import createApp from "@shopify/app-bridge";
+import { Redirect } from "@shopify/app-bridge/actions";
 import {
   Banner,
   Button,
@@ -158,9 +160,20 @@ export default function Pricing() {
         status: "success",
         msg: "Redirecting you to Shopify billing...",
       });
-      const billingUrl = `/api/startSubscription${window.location.search}`;
-      if (window.top) {
-        window.top.location.assign(billingUrl);
+      const billingUrl = new URL(
+        `/api/startSubscription${window.location.search}`,
+        window.location.origin
+      ).toString();
+      const host = new URLSearchParams(window.location.search).get("host");
+
+      if (host) {
+        const app = createApp({
+          apiKey: process.env.SHOPIFY_API_KEY,
+          host,
+          forceRedirect: true,
+        });
+        const redirect = Redirect.create(app);
+        redirect.dispatch(Redirect.Action.REMOTE, billingUrl);
       } else {
         window.location.assign(billingUrl);
       }

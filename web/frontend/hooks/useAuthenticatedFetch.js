@@ -1,3 +1,6 @@
+import createApp from "@shopify/app-bridge";
+import { Redirect } from "@shopify/app-bridge/actions";
+
 /**
  * A hook that returns an auth-aware fetch function.
  * @returns {Function} fetch function
@@ -51,6 +54,7 @@ async function checkForReauthorization(response) {
 
 function redirectToAuth(targetUrl) {
   const currentShop = new URLSearchParams(window.location.search).get("shop");
+  const host = new URLSearchParams(window.location.search).get("host");
   let authUrl;
 
   try {
@@ -63,8 +67,14 @@ function redirectToAuth(targetUrl) {
     authUrl.searchParams.set("shop", currentShop);
   }
 
-  if (window.top) {
-    window.top.location.assign(authUrl.toString());
+  if (host) {
+    const app = createApp({
+      apiKey: process.env.SHOPIFY_API_KEY,
+      host,
+      forceRedirect: true,
+    });
+    const redirect = Redirect.create(app);
+    redirect.dispatch(Redirect.Action.REMOTE, authUrl.toString());
     return;
   }
 
