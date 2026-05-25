@@ -416,49 +416,11 @@ app.get("/api/hasActiveSubscription", withAuthenticatedSession(async (_req, res)
   try {
     const session = res.locals.shopify.session;
     const tier = await getPlanTier(session);
-    const hasActive = tier === PREMIUM_PLAN;
-
-    if (!hasActive) {
-      return res.status(HTTP_STATUS.OK).send({
-        hasActiveSubscription: false,
-        tier: FREE_PLAN,
-        isTest: IS_TEST,
-      });
-    }
-
-    const client = new shopify.api.clients.Graphql({ session });
-    const currentInstallations = await client.request(CURRENT_APP_INSTALLATION, {
-      variables: { namespace: APP_NAMESPACE, key: PREMIUM_PLAN_KEY },
-    });
-
-    const installation = currentInstallations?.currentAppInstallation;
-    const ownerId = installation?.id;
-    const existing = installation?.metafield;
-
-    if (!existing && ownerId) {
-      const createResp = await client.request(CREATE_APP_DATA_METAFIELD, {
-        variables: {
-          metafieldsSetInput: [
-            {
-              namespace: APP_NAMESPACE,
-              key: PREMIUM_PLAN_KEY,
-              type: "boolean",
-              value: "true",
-              ownerId,
-            },
-          ],
-        },
-      });
-
-      const createErrors = createResp?.metafieldsSet?.userErrors || [];
-      if (createErrors.length) {
-        console.error("Failed to add metafield:", createErrors);
-      }
-    }
+    const hasActiveSubscription = tier === PREMIUM_PLAN;
 
     return res.status(HTTP_STATUS.OK).send({
-      hasActiveSubscription: true,
-      tier,
+      hasActiveSubscription,
+      tier: hasActiveSubscription ? tier : FREE_PLAN,
       isTest: IS_TEST,
     });
   } catch (error) {
