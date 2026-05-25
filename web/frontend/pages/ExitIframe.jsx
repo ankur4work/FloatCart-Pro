@@ -1,29 +1,17 @@
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { Banner, Layout, Page } from "@shopify/polaris";
 
 export default function ExitIframe() {
-  const { search } = useLocation();
-
-  useEffect(() => {
-    if (!search) return;
-
-    const params = new URLSearchParams(search);
-    const redirectUri = params.get("redirectUri");
-    if (!redirectUri) return;
-
-    const decodedUri = decodeURIComponent(redirectUri);
-    let url;
-
-    try {
-      url = new URL(decodedUri);
-    } catch {
-      return;
-    }
-
-    if (url.hostname === window.location.hostname) {
-      window.top.location.href = decodedUri;
-    }
-  }, [search]);
-
-  return null;
+  return (
+    <Page narrowWidth>
+      <Layout>
+        <Layout.Section>
+          <div style={{ marginTop: "100px" }}>
+            <Banner status="info" title="This route is no longer used.">
+              Reopen the app from Shopify admin if you were redirected here.
+            </Banner>
+          </div>
+        </Layout.Section>
+      </Layout>
+    </Page>
+  );
 }

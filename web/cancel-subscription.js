@@ -1,71 +1,45 @@
-import { GraphqlQueryError } from "@shopify/shopify-api";
 import shopify from "./shopify.js";
 
+export default async function cancelSubscription(session) {
+  const subscriptionId = await getActiveSubscriptionId(session);
 
-
-let isProd;
-
-export default async function cancelSubscription(
-    session,
-    isProdOverride = process.env.isProd === "production"
-  ){
-  
-    isProd = isProdOverride;
-  
-    const subscriptionId = await getActiveSubsId(session);
-    console.log("subscriptionId:" +subscriptionId)
-    const status = await appSubscriptionCancel(session, subscriptionId);
-
-    return status;
-  
+  if (!subscriptionId) {
+    return "No subscription found";
   }
 
+  return appSubscriptionCancel(session, subscriptionId);
+}
 
-  async function getActiveSubsId(session) {
-    const client = new shopify.api.clients.Graphql({ session });
-  
-      const currentInstallations = await client.query({
-        data: RECURRING_PURCHASES_QUERY,
-      });
-      const subscriptions =
-        currentInstallations.body.data.currentAppInstallation.activeSubscriptions;
-  
-      for (let i = 0, len = subscriptions.length; i < len; i++) {
-        console.log("subscription name: ", subscriptions[i].name);
-        console.log("Subscription Id: ",subscriptions[i].id);
-        return subscriptions[i].id;
+async function getActiveSubscriptionId(session) {
+  const client = new shopify.api.clients.Graphql({ session });
+  const currentInstallations = await client.request(RECURRING_PURCHASES_QUERY);
+  const subscriptions =
+    currentInstallations?.currentAppInstallation?.activeSubscriptions ||
+    currentInstallations?.data?.currentAppInstallation?.activeSubscriptions ||
+    [];
 
-      }
+  return subscriptions[0]?.id || null;
+}
 
+async function appSubscriptionCancel(session, subscriptionId) {
+  const client = new shopify.api.clients.Graphql({ session });
+  const mutationResponse = await client.request(CANCEL_SUBSCRIPTION, {
+    variables: { id: subscriptionId },
+  });
+
+  const payload =
+    mutationResponse?.appSubscriptionCancel ||
+    mutationResponse?.data?.appSubscriptionCancel;
+  const userErrors = payload?.userErrors || [];
+
+  if (userErrors.length) {
+    throw new Error(userErrors.map((error) => error.message).join(", "));
   }
 
-  async function appSubscriptionCancel(session, subscriptionId) {
-    const client = new shopify.api.clients.Graphql({ session });
-  
-    const mutationResponse = await client.query({
-      data: {
-        query: CANCEL_SUBSCRIPTION,
-        variables: {
-          id: subscriptionId
-        },
-      },
-    });
+  return payload?.appSubscription?.status || "cancelled";
+}
 
-    if (mutationResponse.body.errors && mutationResponse.body.errors.length) {
-      throw new ShopifyGraphqlClient(
-        "Error while subscription cancel",
-        mutationResponse.body.errors
-      );
-    }else{
-      console.log("Subscription canceled successfully: ", session.shop);
-      //console.log("Status: ", mutationResponse.body.data.appSubscriptionCancel.appSubscription.status);
-    }
-
-    return  mutationResponse.body.data.appSubscriptionCancel.appSubscription.status;
-
-  }
-
-  const CANCEL_SUBSCRIPTION = `
+const CANCEL_SUBSCRIPTION = `
 mutation appSubscriptionCancel($id: ID!) {
   appSubscriptionCancel(id: $id) {
     appSubscription {
@@ -85,7 +59,9 @@ const RECURRING_PURCHASES_QUERY = `
 query appSubscription {
   currentAppInstallation {
     activeSubscriptions {
-      name, id, test
+      name
+      id
+      test
     }
   }
 }

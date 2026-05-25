@@ -158,14 +158,28 @@ export default function Pricing() {
         status: "success",
         msg: "Redirecting you to Shopify billing...",
       });
-      const billingUrl = new URL(
-        `/api/startSubscription${window.location.search}`,
-        window.location.origin
-      ).toString();
-      const exitIframeUrl = new URL("/exitiframe", window.location.origin);
-      exitIframeUrl.searchParams.set("redirectUri", encodeURIComponent(billingUrl));
-      window.location.assign(`${exitIframeUrl.pathname}${exitIframeUrl.search}`);
-      return;
+      const response = await fetchAuth("/api/billing");
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.error || data?.message || "Failed to start billing.");
+      }
+
+      if (data?.status === "active") {
+        setBanner({
+          status: "info",
+          msg: "Premium is already active for this store.",
+        });
+        setServerTier("premium");
+        return;
+      }
+
+      if (data?.status === "needs_confirmation" && data?.confirmationUrl) {
+        window.location.assign(data.confirmationUrl);
+        return;
+      }
+
+      throw new Error(data?.message || "Billing confirmation URL was missing.");
     } catch (error) {
       console.error(error);
       setBanner({

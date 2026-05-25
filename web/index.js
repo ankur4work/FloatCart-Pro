@@ -9,7 +9,6 @@ import cancelSubscription from "./cancel-subscription.js";
 import GDPRWebhookHandlers from "./gdpr.js";
 import dotenv from "dotenv";
 import createDbConnection from "./analytics-db.js";
-import { connectToMongoDB } from "./mongodb.js";
 import {
   FREE_PLAN,
   PREMIUM_PLAN,
@@ -125,40 +124,6 @@ const HTTP_STATUS = {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/api/floating-cart/hasSubscription", async (req, res) => {
-  try {
-    const { shop } = req.query;
-
-    if (!shop) {
-      return res.status(HTTP_STATUS.OK).send({
-        hasActiveSubscription: false,
-        tier: FREE_PLAN,
-      });
-    }
-
-    const collection = await connectToMongoDB();
-    const session = await collection.findOne({ shop });
-
-    if (!session) {
-      return res.status(HTTP_STATUS.OK).send({
-        hasActiveSubscription: false,
-        tier: FREE_PLAN,
-      });
-    }
-
-    const tier = await getPlanTier(session);
-
-    return res.status(HTTP_STATUS.OK).send({
-      hasActiveSubscription: tier === PREMIUM_PLAN,
-      tier,
-    });
-  } catch (error) {
-    console.error("Error in hasSubscription:", error.message);
-    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
-      error: "Failed to fetch subscription",
-    });
-  }
-});
 
 async function getPlanTier(session) {
   try {
@@ -296,31 +261,16 @@ const shopDetailsQuery = `
   }
 }`;
 
-app.get("/api/createSubscription", withAuthenticatedSession(async (_req, res) => {
+app.get("/api/billing", withAuthenticatedSession(async (_req, res) => {
   const session = res.locals.shopify.session;
   const shop = session?.shop || null;
 
-  console.info("[Billing] createSubscription:start", {
-    shop,
-    plan: PREMIUM_PLAN,
-    isTest: IS_TEST,
-    appHost: APP_HOST,
-    hasSession: Boolean(session),
-  });
-
   if (!session || !shop) {
-    console.error("[Billing] createSubscription:session_missing", {
-      plan: PREMIUM_PLAN,
-      isTest: IS_TEST,
-      appHost: APP_HOST,
-    });
-
     return res.status(HTTP_STATUS.UNAUTHORIZED).send({
       status: "reauth_required",
       plan: PREMIUM_PLAN,
       shop,
       isTest: IS_TEST,
-      reason: "session_missing",
       message: "Shopify session is missing or expired.",
       reauthUrl: shop ? `/api/auth?shop=${encodeURIComponent(shop)}` : "/api/auth",
     });
@@ -333,20 +283,12 @@ app.get("/api/createSubscription", withAuthenticatedSession(async (_req, res) =>
       isTest: IS_TEST,
     });
 
-    console.info("[Billing] createSubscription:check_complete", {
-      shop,
-      plan: PREMIUM_PLAN,
-      isTest: IS_TEST,
-      hasPayment,
-    });
-
     if (hasPayment) {
       return res.status(HTTP_STATUS.OK).send({
         status: "active",
         plan: PREMIUM_PLAN,
         shop,
         isTest: IS_TEST,
-        message: "Premium is already active for this store.",
       });
     }
 
@@ -357,12 +299,6 @@ app.get("/api/createSubscription", withAuthenticatedSession(async (_req, res) =>
     });
 
     if (!confirmationUrl) {
-      console.error("[Billing] createSubscription:missing_confirmation_url", {
-        shop,
-        plan: PREMIUM_PLAN,
-        isTest: IS_TEST,
-      });
-
       return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
         status: "error",
         plan: PREMIUM_PLAN,
@@ -372,13 +308,6 @@ app.get("/api/createSubscription", withAuthenticatedSession(async (_req, res) =>
         message: "Shopify did not return a billing confirmation URL.",
       });
     }
-
-    console.info("[Billing] createSubscription:confirmation_ready", {
-      shop,
-      plan: PREMIUM_PLAN,
-      isTest: IS_TEST,
-      hasConfirmationUrl: true,
-    });
 
     return res.status(HTTP_STATUS.OK).send({
       status: "needs_confirmation",
@@ -393,16 +322,6 @@ app.get("/api/createSubscription", withAuthenticatedSession(async (_req, res) =>
       ? "reauth_required"
       : "billing_request_failed";
 
-    console.error("[Billing] createSubscription:error", {
-      shop,
-      plan: PREMIUM_PLAN,
-      isTest: IS_TEST,
-      appHost: APP_HOST,
-      reason,
-      message,
-      stack: error?.stack,
-    });
-
     if (reason === "reauth_required") {
       return res.status(HTTP_STATUS.UNAUTHORIZED).send({
         status: "reauth_required",
@@ -411,9 +330,19 @@ app.get("/api/createSubscription", withAuthenticatedSession(async (_req, res) =>
         isTest: IS_TEST,
         reason,
         message: "Shopify session expired. Restart the app and try again.",
-        reauthUrl: `/api/auth?shop=${encodeURIComponent(shop)}`,
+        reauthUrl: shop ? `/api/auth?shop=${encodeURIComponent(shop)}` : "/api/auth",
       });
     }
+
+    console.error("[Billing] billing:error", {
+      shop,
+      plan: PREMIUM_PLAN,
+      isTest: IS_TEST,
+      appHost: APP_HOST,
+      reason,
+      message,
+      stack: error?.stack,
+    });
 
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
       status: "error",
@@ -426,46 +355,12 @@ app.get("/api/createSubscription", withAuthenticatedSession(async (_req, res) =>
   }
 }));
 
+app.get("/api/createSubscription", withAuthenticatedSession(async (_req, res) => {
+  return res.redirect("/api/billing");
+}));
+
 app.get("/api/startSubscription", withAuthenticatedSession(async (_req, res) => {
-  const session = res.locals.shopify.session;
-  const shop = session?.shop || null;
-
-  if (!session || !shop) {
-    return res.redirect(shop ? `/api/auth?shop=${encodeURIComponent(shop)}` : "/api/auth");
-  }
-
-  try {
-    const hasPayment = await shopify.api.billing.check({
-      session,
-      plans: [PREMIUM_PLAN],
-      isTest: IS_TEST,
-    });
-
-    if (hasPayment) {
-      return res.redirect(`/?shop=${encodeURIComponent(shop)}&billing=active`);
-    }
-
-    const confirmationUrl = await shopify.api.billing.request({
-      session,
-      plan: PREMIUM_PLAN,
-      isTest: IS_TEST,
-    });
-
-    if (!confirmationUrl) {
-      return res.redirect(`/pricing?billing_error=${encodeURIComponent("missing_confirmation_url")}`);
-    }
-
-    return res.redirect(String(confirmationUrl));
-  } catch (error) {
-    const message = error?.message || "Failed to create subscription";
-    const needsAuth = /auth|session|reauthor/i.test(message);
-
-    if (needsAuth) {
-      return res.redirect(`/api/auth?shop=${encodeURIComponent(shop)}`);
-    }
-
-    return res.redirect(`/pricing?billing_error=${encodeURIComponent(message)}`);
-  }
+  return res.redirect("/api/billing");
 }));
 
 app.get("/api/cancelSubscription", withAuthenticatedSession(async (_req, res) => {
@@ -496,7 +391,7 @@ app.get("/api/cancelSubscription", withAuthenticatedSession(async (_req, res) =>
 
     if (ownerId && metafield) {
       const deleteResp = await client.request(APP_OWNED_METAFIELD_DELETE, {
-        variables: { ownerId, namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
+        variables: { ownerId, namespace: APP_NAMESPACE, key: PREMIUM_PLAN_KEY },
       });
 
       const delErrors = deleteResp?.appOwnedMetafieldDelete?.userErrors || [];

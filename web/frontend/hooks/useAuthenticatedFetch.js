@@ -1,11 +1,35 @@
+import createApp from "@shopify/app-bridge";
+import { authenticatedFetch } from "@shopify/app-bridge-utils";
+
 /**
  * A hook that returns an auth-aware fetch function.
  * @returns {Function} fetch function
  */
 export function useAuthenticatedFetch() {
   return async (uri, options = {}) => {
-    const response = await fetch(uri, {
-      credentials: "same-origin",
+    const host =
+      new URLSearchParams(window.location.search).get("host") ||
+      window.__SHOPIFY_DEV_HOST;
+
+    if (!host || !process.env.SHOPIFY_API_KEY) {
+      return fetch(uri, {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+          Accept: "application/json",
+          ...(options.headers || {}),
+        },
+      });
+    }
+
+    const app = createApp({
+      apiKey: process.env.SHOPIFY_API_KEY,
+      host,
+      forceRedirect: false,
+    });
+
+    const fetchWithAuth = authenticatedFetch(app, fetch);
+    const response = await fetchWithAuth(uri, {
       ...options,
       headers: {
         Accept: "application/json",
@@ -63,8 +87,6 @@ function redirectToAuth(targetUrl) {
     authUrl.searchParams.set("shop", currentShop);
   }
 
-  const exitIframeUrl = new URL("/exitiframe", window.location.origin);
-  exitIframeUrl.searchParams.set("redirectUri", encodeURIComponent(authUrl.toString()));
-  window.location.assign(`${exitIframeUrl.pathname}${exitIframeUrl.search}`);
+  window.location.assign(authUrl.toString());
 }
 
