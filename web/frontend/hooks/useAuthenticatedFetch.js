@@ -1,5 +1,4 @@
-import createApp from "@shopify/app-bridge";
-import { authenticatedFetch } from "@shopify/app-bridge-utils";
+import createApp, { authenticatedFetch } from "@shopify/app-bridge";
 
 /**
  * A hook that returns an auth-aware fetch function.
