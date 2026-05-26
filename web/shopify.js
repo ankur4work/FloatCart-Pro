@@ -59,6 +59,7 @@ const shopify = shopifyApp({
     hostName: appHost.replace(/https?:\/\//, ""),
     scopes: process.env.SCOPES.split(","),
     billing: billingConfig,
+    isEmbeddedApp: true,
   },
   auth: {
     path: "/api/auth",
@@ -68,6 +69,9 @@ const shopify = shopifyApp({
     path: "/api/webhooks",
   },
   sessionStorage: new MongoDBSessionStorage(mongoUri, mongoDatabase),
+  future: {
+    unstable_newEmbeddedAuthStrategy: true,
+  },
 });
 
 export default shopify;
