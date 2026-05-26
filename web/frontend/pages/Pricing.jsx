@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import createApp from "@shopify/app-bridge";
-import { Redirect } from "@shopify/app-bridge/actions";
 import {
   Banner,
   Button,
@@ -17,22 +15,7 @@ import { CircleTickMinor, CancelSmallMinor } from "@shopify/polaris-icons";
 import { useAuthenticatedFetch } from "../hooks";
 
 function redirectToBillingConfirmation(confirmationUrl) {
-  const host =
-    new URLSearchParams(window.location.search).get("host") ||
-    window.__SHOPIFY_DEV_HOST;
-
-  if (host && process.env.SHOPIFY_API_KEY) {
-    const app = createApp({
-      apiKey: process.env.SHOPIFY_API_KEY,
-      host,
-      forceRedirect: false,
-    });
-
-    Redirect.create(app).dispatch(Redirect.Action.REMOTE, confirmationUrl);
-    return;
-  }
-
-  window.location.assign(confirmationUrl);
+  window.open(confirmationUrl, "_top");
 }
 
 const PREMIUM_PRICE = Number(import.meta.env.VITE_FLOATCART_PREMIUM_PRICE || "30");
