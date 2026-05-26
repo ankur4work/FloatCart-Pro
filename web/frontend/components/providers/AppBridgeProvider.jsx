@@ -71,14 +71,20 @@ export function AppBridgeProvider({ children }) {
           ),
         };
 
-    const shop = new URLSearchParams(location.search).get("shop");
+    const params = new URLSearchParams(location.search);
+    const shop = params.get("shop");
+    const host = params.get("host") || window.__SHOPIFY_DEV_HOST;
     const action = !process.env.SHOPIFY_API_KEY
       ? null
       : shop
         ? {
             content: "Restart app",
             onAction: () => {
-              window.location.href = `/api/auth?shop=${encodeURIComponent(shop)}`;
+              const authParams = new URLSearchParams({ shop });
+              if (host) {
+                authParams.set("host", host);
+              }
+              window.location.href = `/api/auth?${authParams.toString()}`;
             },
           }
         : undefined;

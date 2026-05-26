@@ -19,8 +19,21 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [activateError, setActivateError] = useState("");
   const shopQuery = useMemo(() => {
-    const shop = new URLSearchParams(location.search).get("shop");
-    return shop ? `?shop=${encodeURIComponent(shop)}` : "";
+    const params = new URLSearchParams(location.search);
+    const nextParams = new URLSearchParams();
+    const shop = params.get("shop");
+    const host = params.get("host") || window.__SHOPIFY_DEV_HOST;
+
+    if (shop) {
+      nextParams.set("shop", shop);
+    }
+
+    if (host) {
+      nextParams.set("host", host);
+    }
+
+    const query = nextParams.toString();
+    return query ? `?${query}` : "";
   }, [location.search]);
 
   useEffect(() => {

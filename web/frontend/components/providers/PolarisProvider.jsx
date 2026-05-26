@@ -9,12 +9,16 @@ function AppBridgeLink({ url, children, external, ...rest }) {
   const location = useLocation();
   const handleClick = useCallback(() => {
     const nextUrl = new URL(url, window.location.origin);
+    const currentParams = new URLSearchParams(location.search);
+    const currentShop = currentParams.get("shop");
+    const currentHost = currentParams.get("host") || window.__SHOPIFY_DEV_HOST;
 
-    if (!nextUrl.searchParams.get("shop")) {
-      const currentShop = new URLSearchParams(location.search).get("shop");
-      if (currentShop) {
-        nextUrl.searchParams.set("shop", currentShop);
-      }
+    if (!nextUrl.searchParams.get("shop") && currentShop) {
+      nextUrl.searchParams.set("shop", currentShop);
+    }
+
+    if (!nextUrl.searchParams.get("host") && currentHost) {
+      nextUrl.searchParams.set("host", currentHost);
     }
 
     navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
